@@ -401,6 +401,12 @@ pub trait ObjectStore: std::fmt::Display + Send + Sync + Debug + 'static {
         .await
     }
 
+    /// Return the bytes that are stored at the specified location.
+    #[cfg(feature = "cloud")]
+    async fn build_get(&self, location: &Path) -> Result<reqwest::Request> {
+        Err(Error::NotImplemented)
+    }
+
     /// Return the metadata for the specified location
     async fn head(&self, location: &Path) -> Result<ObjectMeta>;
 

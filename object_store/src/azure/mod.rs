@@ -51,7 +51,7 @@ use crate::client::get::GetClientExt;
 use crate::client::list::ListClientExt;
 use crate::client::{
     ClientConfigKey, CredentialProvider, StaticCredentialProvider,
-    TokenCredentialProvider,
+    TokenCredentialProvider, get::GetBuilder
 };
 use crate::config::ConfigValue;
 pub use credential::authority_hosts;
@@ -200,6 +200,10 @@ impl ObjectStore for MicrosoftAzure {
 
     async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
         self.client.get_opts(location, options).await
+    }
+
+    async fn build_get(&self, location: &Path) -> Result<reqwest::Request> {
+        self.client.build_get(location, Default::default(), false).await
     }
 
     async fn head(&self, location: &Path) -> Result<ObjectMeta> {
