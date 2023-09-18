@@ -21,7 +21,7 @@ use crate::{Error, GetOptions, GetResult, ObjectMeta};
 use crate::{GetResultPayload, Result};
 use async_trait::async_trait;
 use futures::{StreamExt, TryStreamExt};
-use reqwest::Response;
+use reqwest::{Request, Response};
 
 /// A client that can perform a get request
 #[async_trait]
@@ -34,6 +34,18 @@ pub trait GetClient: Send + Sync + 'static {
         options: GetOptions,
         head: bool,
     ) -> Result<Response>;
+}
+
+#[async_trait]
+pub trait GetBuilder: Send + Sync + 'static {
+    const STORE: &'static str;
+
+    async fn build_get(
+        &self,
+        path: &Path,
+        options: GetOptions,
+        head: bool,
+    ) -> Result<Request>;
 }
 
 /// Extension trait for [`GetClient`] that adds common retrieval functionality

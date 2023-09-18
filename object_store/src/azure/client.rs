@@ -36,7 +36,7 @@ use itertools::Itertools;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::{
     header::{HeaderValue, CONTENT_LENGTH, IF_NONE_MATCH},
-    Client as ReqwestClient, Method, Response, StatusCode,
+    Client as ReqwestClient, Method, Response, StatusCode, RequestBuilder
 };
 use serde::{Deserialize, Serialize};
 use snafu::{ResultExt, Snafu};
@@ -305,6 +305,41 @@ impl GetClient for AzureClient {
             }
             _ => Ok(response),
         }
+    }
+}
+
+#[async_trait]
+impl GetBuilder for AzureClient {
+    const STORE: &'static str = STORE;
+
+    /// Make an Azure GET request
+    /// <https://docs.microsoft.com/en-us/rest/api/storageservices/get-blob>
+    /// <https://docs.microsoft.com/en-us/rest/api/storageservices/get-blob-properties>
+    async fn build_get(
+        &self,
+        path: &Path,
+        options: GetOptions,
+        head: bool,
+    ) -> Result<Response> {
+        let credential = self.get_credential().await?;
+        let url = self.config.path_url(path);
+        let method = match head {
+            true => Method::HEAD,
+            false => Method::GET,
+        };
+
+        let builder = self
+            .client
+            .request(method, url)
+            .header(CONTENT_LENGTH, HeaderValue::from_static("0"))
+            .body(Bytes::new());
+
+        let request = builder
+            .with_get_options(options)
+            .with_azure_authorization(&credential, &self.config.account)
+            .build()?;
+
+        Ok(request)
     }
 }
 
