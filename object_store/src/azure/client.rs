@@ -18,7 +18,7 @@
 use super::credential::AzureCredential;
 use crate::azure::credential::*;
 use crate::azure::{AzureCredentialProvider, STORE};
-use crate::client::get::GetClient;
+use crate::client::get::{GetClient, GetBuilder};
 use crate::client::list::ListClient;
 use crate::client::retry::RetryExt;
 use crate::client::GetOptionsExt;
@@ -36,7 +36,7 @@ use itertools::Itertools;
 use reqwest::header::CONTENT_TYPE;
 use reqwest::{
     header::{HeaderValue, CONTENT_LENGTH, IF_NONE_MATCH},
-    Client as ReqwestClient, Method, Response, StatusCode, RequestBuilder
+    Client as ReqwestClient, Method, Request, Response, StatusCode, RequestBuilder
 };
 use serde::{Deserialize, Serialize};
 use snafu::{ResultExt, Snafu};
@@ -320,7 +320,7 @@ impl GetBuilder for AzureClient {
         path: &Path,
         options: GetOptions,
         head: bool,
-    ) -> Result<Response> {
+    ) -> Result<Request> {
         let credential = self.get_credential().await?;
         let url = self.config.path_url(path);
         let method = match head {
@@ -337,7 +337,10 @@ impl GetBuilder for AzureClient {
         let request = builder
             .with_get_options(options)
             .with_azure_authorization(&credential, &self.config.account)
-            .build()?;
+            .build()
+            .context(GetResponseBodySnafu {
+                path: path.as_ref(),
+            })?;
 
         Ok(request)
     }
