@@ -48,7 +48,7 @@ use crate::aws::client::{S3Client, S3Config};
 use crate::aws::credential::{
     InstanceCredentialProvider, TaskCredentialProvider, WebIdentityProvider,
 };
-use crate::client::get::GetClientExt;
+use crate::client::get::{GetClientExt, GetBuilder};
 use crate::client::list::ListClientExt;
 use crate::client::{
     ClientConfigKey, CredentialProvider, StaticCredentialProvider,
@@ -245,6 +245,10 @@ impl ObjectStore for AmazonS3 {
 
     async fn get_opts(&self, location: &Path, options: GetOptions) -> Result<GetResult> {
         self.client.get_opts(location, options).await
+    }
+
+    async fn build_get(&self, location: &Path) -> Result<reqwest::Request> {
+        self.client.build_get(location, Default::default(), false).await
     }
 
     async fn head(&self, location: &Path) -> Result<ObjectMeta> {

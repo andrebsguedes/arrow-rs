@@ -20,7 +20,7 @@ use crate::aws::credential::{AwsCredential, CredentialExt};
 use crate::aws::{
     AwsCredentialProvider, S3CopyIfNotExists, STORE, STRICT_PATH_ENCODE_SET,
 };
-use crate::client::get::GetClient;
+use crate::client::get::{GetClient, GetBuilder};
 use crate::client::list::ListClient;
 use crate::client::list_response::ListResponse;
 use crate::client::retry::RetryExt;
@@ -39,7 +39,7 @@ use percent_encoding::{utf8_percent_encode, PercentEncode};
 use quick_xml::events::{self as xml_events};
 use reqwest::{
     header::{CONTENT_LENGTH, CONTENT_TYPE},
-    Client as ReqwestClient, Method, Response, StatusCode,
+    Client as ReqwestClient, Request, Method, Response, StatusCode,
 };
 use serde::{Deserialize, Serialize};
 use snafu::{ResultExt, Snafu};
@@ -585,6 +585,44 @@ impl GetClient for S3Client {
             })?;
 
         Ok(response)
+    }
+}
+
+#[async_trait]
+impl GetBuilder for S3Client {
+    const STORE: &'static str = STORE;
+
+    /// Make an S3 GET request <https://docs.aws.amazon.com/AmazonS3/latest/API/API_GetObject.html>
+    async fn build_get(
+        &self,
+        path: &Path,
+        options: GetOptions,
+        head: bool,
+    ) -> Result<Request> {
+        let credential = self.get_credential().await?;
+        let url = self.config.path_url(path);
+        let method = match head {
+            true => Method::HEAD,
+            false => Method::GET,
+        };
+
+        let builder = self.client.request(method, url);
+
+        let request = builder
+            .with_get_options(options)
+            .with_aws_sigv4(
+                credential.as_ref(),
+                &self.config.region,
+                "s3",
+                self.config.sign_payload,
+                None,
+            )
+            .build()
+            .context(GetResponseBodySnafu {
+                path: path.as_ref(),
+            })?;
+
+        Ok(request)
     }
 }
 
