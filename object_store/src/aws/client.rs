@@ -343,16 +343,17 @@ impl<'a> Request<'a> {
     }
 
     pub fn with_payload(mut self, payload: PutPayload) -> Self {
-        if !self.config.skip_signature || self.config.checksum.is_some() {
+        if (!self.config.skip_signature && self.config.sign_payload)
+            || self.config.checksum.is_some()
+        {
             let mut sha256 = Context::new(&digest::SHA256);
             payload.iter().for_each(|x| sha256.update(x));
             let payload_sha256 = sha256.finish();
 
             if let Some(Checksum::SHA256) = self.config.checksum {
-                self.builder = self.builder.header(
-                    "x-amz-checksum-sha256",
-                    BASE64_STANDARD.encode(payload_sha256),
-                );
+                self.builder = self
+                    .builder
+                    .header(SHA256_CHECKSUM, BASE64_STANDARD.encode(payload_sha256));
             }
             self.payload_sha256 = Some(payload_sha256);
         }
