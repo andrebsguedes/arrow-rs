@@ -68,6 +68,7 @@ http = ["cloud"]
 tls-webpki-roots = ["reqwest?/rustls-tls-webpki-roots"]
 integration = []
 experimental-azure-list-offset = []
+experimental-arbitrary-list-prefix = []
 
 [dev-dependencies] # In alphabetical order
 futures-test = "0.3"

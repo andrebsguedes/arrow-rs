@@ -67,6 +67,13 @@ impl<T: ListClient> ListClientExt for T {
         offset: Option<&Path>,
     ) -> BoxStream<'_, Result<ListResult>> {
         let offset = offset.map(|x| x.to_string());
+
+        #[cfg(feature = "experimental-arbitrary-list-prefix")]
+        let prefix = prefix
+            .filter(|x| !x.as_ref().is_empty())
+            .map(|p| p.to_string());
+
+        #[cfg(not(feature = "experimental-arbitrary-list-prefix"))]
         let prefix = prefix
             .filter(|x| !x.as_ref().is_empty())
             .map(|p| format!("{}{}", p.as_ref(), crate::path::DELIMITER));
