@@ -704,8 +704,11 @@ fn to_list_result(value: ListResultInternal, prefix: Option<&str>) -> Result<Lis
         // enabled. When we want directories, its always via the BlobPrefix mechanics,
         // and during lists we state that prefixes are evaluated on path segment basis.
         .filter(|blob| {
-            !matches!(blob.properties.resource_type.as_ref(), Some(typ) if typ == "directory")
-                && blob.name.len() > prefix.len()
+            #[cfg(not(feature = "experimental-arbitrary-list-prefix"))]
+            return !matches!(blob.properties.resource_type.as_ref(), Some(typ) if typ == "directory")
+                && blob.name.len() > prefix.len();
+            #[cfg(feature = "experimental-arbitrary-list-prefix")]
+            return !matches!(blob.properties.resource_type.as_ref(), Some(typ) if typ == "directory");
         })
         .map(ObjectMeta::try_from)
         .collect::<Result<_>>()?;
